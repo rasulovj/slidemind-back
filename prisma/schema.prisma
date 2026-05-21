@@ -1,0 +1,179 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Plan {
+  FREE
+  PRO
+  PREMIUM
+}
+
+enum Language {
+  uz
+  en
+  ru
+}
+
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+  TELEGRAM
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String?
+  authProvider  AuthProvider @default(LOCAL)
+  googleId      String?   @unique
+  telegramId    String?   @unique
+  fullName      String?
+  avatarUrl     String?
+  plan          Plan      @default(FREE)
+  credits       Int       @default(10)
+  language      Language  @default(uz)
+  referralCode  String    @unique @default(cuid())
+  referredBy    String?
+  emailVerified DateTime?
+  refreshToken  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  presentations   Presentation[]
+  transactions    CreditTransaction[]
+  paymentOrders   PaymentOrder[]
+  referrals       User[]   @relation("Referrals")
+  referrer        User?    @relation("Referrals", fields: [referredBy], references: [id])
+
+  @@index([email])
+  @@index([referralCode])
+}
+
+enum TransactionType {
+  TOPUP
+  USAGE
+  BONUS
+  REFUND
+}
+
+model CreditTransaction {
+  id          String          @id @default(cuid())
+  userId      String
+  type        TransactionType
+  amount      Int
+  description String
+  reference   String?
+  createdAt   DateTime        @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, createdAt])
+}
+
+enum PaymentOrderType {
+  CREDIT_PACK
+  PLAN_UPGRADE
+}
+
+enum PaymentOrderStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  CANCELED
+}
+
+model PaymentOrder {
+  id          String             @id @default(cuid())
+  orderNum    Int                @unique @default(autoincrement())
+  userId      String
+  type        PaymentOrderType
+  status      PaymentOrderStatus @default(PENDING)
+  amountUzs   Int
+  credits     Int                @default(0)
+  plan        Plan?
+  chequeId    String?            @unique
+  tspayTxId   Int?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([chequeId])
+}
+
+model Presentation {
+  id           String   @id @default(cuid())
+  userId       String
+  title        String   @default("Sarlavsiz prezentatsiya")
+  thumbnailUrl String?
+  slideCount   Int      @default(0)
+  aspectRatio  String   @default("16:9")
+  themeId      String   @default("default")
+  isPublic     Boolean  @default(false)
+  shareToken   String?  @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slides Slide[]
+
+  @@index([userId])
+  @@index([shareToken])
+}
+
+model Slide {
+  id             String   @id @default(cuid())
+  presentationId String
+  position       Int
+  canvasJson     Json     @default("{}")
+  background     Json     @default("{\"type\":\"color\",\"value\":\"#ffffff\"}")
+  speakerNotes   String?
+  thumbnailUrl   String?
+  updatedAt      DateTime @updatedAt
+
+  presentation Presentation @relation(fields: [presentationId], references: [id], onDelete: Cascade)
+
+  @@index([presentationId])
+  @@index([presentationId, position])
+}
+
+model Template {
+  id         String   @id @default(cuid())
+  title      String
+  category   String
+  previewUrl String
+  slidesJson Json
+  isPremium  Boolean  @default(false)
+  usageCount Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@index([category])
+}
+
+model EmailVerifyToken {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([tokenHash])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([tokenHash])
+}
