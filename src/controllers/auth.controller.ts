@@ -63,8 +63,9 @@ export async function logout(req: Request, res: Response) {
 
 export async function verifyEmail(req: Request, res: Response) {
   try {
-    await AuthService.verifyEmail(req.body.token);
-    return ok(res, { message: apiT(req, "auth.emailVerified") });
+    const { accessToken, refreshToken, user } = await AuthService.verifyEmail(req.body.token);
+    res.cookie("refreshToken", refreshToken, COOKIE_OPTS);
+    return ok(res, { accessToken, user });
   } catch {
     return err(res, apiT(req, "auth.invalidVerificationLink"), 400);
   }
@@ -111,9 +112,9 @@ export async function googleCallback(req: Request, res: Response) {
   if (!code) return res.redirect(`${redirectBase}/callback?error=google_code_missing`);
 
   try {
-    const { refreshToken } = await AuthService.loginWithGoogle(code);
+    const { refreshToken, accessToken } = await AuthService.loginWithGoogle(code);
     res.cookie("refreshToken", refreshToken, COOKIE_OPTS);
-    return res.redirect(`${redirectBase}/callback?provider=google`);
+    return res.redirect(`${redirectBase}/callback?provider=google&token=${encodeURIComponent(accessToken)}`);
   } catch {
     return res.redirect(`${redirectBase}/callback?error=google_failed`);
   }

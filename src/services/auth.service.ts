@@ -47,13 +47,15 @@ export async function verifyEmail(token: string) {
 
   if (!record || record.expiresAt < new Date()) throw new Error("INVALID_TOKEN");
 
-  await prisma.$transaction([
+  const [user] = await prisma.$transaction([
     prisma.user.update({
       where: { id: record.userId },
       data: { emailVerified: new Date() },
     }),
     prisma.emailVerifyToken.delete({ where: { tokenHash } }),
   ]);
+
+  return issueTokens(user);
 }
 
 export async function login(data: { email: string; password: string }) {
