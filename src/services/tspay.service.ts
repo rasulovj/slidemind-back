@@ -11,10 +11,10 @@ const FRONTEND_URL = process.env.FRONTEND_URL!;
 // ── Pack / plan definitions ────────────────────────────────────────────────────
 
 export const CREDIT_PACKS: Record<string, { credits: number; amountUzs: number; label: string }> = {
-  starter:  { credits: 50,   amountUzs: 2_000,   label: "Starter pack — 50 credits"    },
-  popular:  { credits: 200,  amountUzs: 169_000, label: "Popular pack — 200 credits"   },
-  power:    { credits: 500,  amountUzs: 349_000, label: "Power pack — 500 credits"     },
-  ultimate: { credits: 1000, amountUzs: 599_000, label: "Ultimate pack — 1000 credits" },
+  starter:  { credits: 15,  amountUzs: 3_000,  label: "Starter — 15 credits"   },
+  popular:  { credits: 50,  amountUzs: 9_900,  label: "Basic — 50 credits"     },
+  power:    { credits: 150, amountUzs: 27_000, label: "Popular — 150 credits"  },
+  ultimate: { credits: 400, amountUzs: 69_000, label: "Power — 400 credits"    },
 };
 
 export const PLAN_PRICES: Record<string, { amountUzs: number; bonus: number }> = {
